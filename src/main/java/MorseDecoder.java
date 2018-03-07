@@ -52,10 +52,18 @@ public class MorseDecoder {
         double[] returnBuffer = new double[totalBinCount];
 
         double[] sampleBuffer = new double[BIN_SIZE * inputFile.getNumChannels()];
+
+        double sum = 0;
         for (int binIndex = 0; binIndex < totalBinCount; binIndex++) {
-            // Get the right number of samples from the inputFile
-            // Sum all the samples together and store them in the returnBuffer
+            int count = inputFile.readFrames(sampleBuffer, BIN_SIZE);
+            for (int i = (binIndex * BIN_SIZE); i < ((binIndex + 1) * BIN_SIZE); i++) {
+                sum += Math.abs(sampleBuffer[i]);
+                // Get the right number of samples from the inputFile
+                // Sum all the samples together and store them in the returnBuffer
+            }
+            returnBuffer[binIndex] = sum;
         }
+
         return returnBuffer;
     }
 
@@ -82,6 +90,33 @@ public class MorseDecoder {
          * transitions. You will also have to store how much power or silence you have seen.
          */
 
+        int counter = 0;
+        String result = null;
+
+
+        for (int i = 1; i < powerMeasurements.length - 1; i++){
+            
+            if (powerMeasurements[i] <= POWER_THRESHOLD) {
+                counter++;
+                if (counter > DASH_BIN_COUNT) {
+                    result += " ";
+                    counter = 0;
+                }
+            }
+
+            if (powerMeasurements[i] > POWER_THRESHOLD) {
+                counter++;
+                if (counter > DASH_BIN_COUNT) {
+                    result += "-";
+                    counter = 0;
+                }
+                if (powerMeasurements[i + 1] <= POWER_THRESHOLD && counter < DASH_BIN_COUNT) {
+                    result += ".";
+                    counter = 0;
+                }
+            }
+
+        }
         // if ispower and waspower
         // else if ispower and not waspower
         // else if issilence and wassilence
